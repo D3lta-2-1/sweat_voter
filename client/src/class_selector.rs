@@ -24,7 +24,7 @@ impl ClassSelector {
         }
 
         let mut changed = false;
-        ui.label("choisissez une classe");
+        ui.label("Choisir une classe");
         egui::ScrollArea::horizontal().show(ui, |ui| {
             ui.horizontal(|ui| {
                 for (id, name) in self.classes.iter() {

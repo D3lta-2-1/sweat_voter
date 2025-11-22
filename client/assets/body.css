@@ -16,56 +16,30 @@
 	max-width: 90%;
 }
 
-.description {
-	position: relative; 
-	overflow: visible;
-	z-index: 100;
-	margin-top: 40px;
-	color: white;
-	font-size: 20px;
-	margin-top: 10px;
-	margin-bottom: 10px;
-	text-align: center;
-	text-shadow: 10px 10px 8px rgba(0, 0, 0, 0.3);
+.navbar {
+	position: relative;
+	display: flex;
+	overflow: auto;
+	list-style-type: none;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	padding-right: 50px;
+	padding-left: 50px;
+	align-items: center;
+	justify-content: center;
+	vertical-align : center;
 }
 
-.instr {
-	z-index: 10;
-    position: absolute;
-	bottom: 30px;
-	right: 30px;
-}
-
-.dropdown {
-    position: relative;
-    display: flex;
-	text-align: center;
-}
-
-.dropbtn {
-    background-color: #404040; /* Green background */
-    color: white; /* White text */
-    padding: 12px 24px; /* Some padding */
-    font-size: 20px; /* Font size */
-    border: none; /* No border */
-    cursor: pointer; /* Pointer cursor on hover */
-}
-
-.dropdown-content {
-    display: none; /* Hidden by default */
-    position: relative; /* Position it below the button */
-    background-color: #303030; /* Light background */
-	color: white; /* White text */
-    min-width: 160px; /* Minimum width */
-    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); /* Shadow effect */
-    z-index: 1; /* Sit on top */
-	padding-right: 10px;
-}
-
-.liste_instru {
-	display: relative;
-	text-align: left;
-}
+ canvas {
+            margin-right: auto;
+            margin-left: auto;
+            display: block;
+            position: absolute;
+            top: 18%;
+            left: 0;
+            width: 100%;
+            height: 82%;
+        }
 
 .show {
     display: block; /* Show the dropdown content */

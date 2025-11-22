@@ -1,0 +1,75 @@
+.button {
+  background-color: #2D2D30;
+  border: none;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+}
+.button:hover,
+.button:focus {
+  background-color: #28282A;
+} 
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 50%;
+}
+
+.modal-content {
+  background-color: #28282B;
+  margin: 20% auto;
+  padding: 40px;
+  border: 1px solid #606060;
+  width: 80%; 
+  color : white;
+}
+
+.close_1 {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+.close_1:hover,
+.close_1:focus {
+  color: gray;
+  text-decoration: none;
+  cursor: pointer;
+} 
+
+.close_2 {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close_2:hover,
+.close_2:focus {
+  color: gray;
+  text-decoration: none;
+  cursor: pointer;
+} 
+
+.close_3 {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+.close_3:hover,
+.close_3:focus {
+  color: gray;
+  text-decoration: none;
+  cursor: pointer;
+} 

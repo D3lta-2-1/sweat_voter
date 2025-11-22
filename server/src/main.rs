@@ -179,7 +179,7 @@ impl AppState {
             Commands::ViewPassword(ViewPassword { name }) => {
                 let id = server.get_profil_id(&name)?;
                 let password = server.get_password(id)?;
-                Ok(Some(format!("{} password is {}", name, password)))
+                Ok(Some(format!("{}'s password is {}", name, password)))
             }
             Commands::ChangePassword(ChangePassword { name, new_password }) => {
                 let id = server.get_profil_id(&name)?;

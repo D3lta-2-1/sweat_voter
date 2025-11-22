@@ -18,19 +18,19 @@ impl StatsViewer {
             return;
         };
         egui::Grid::new("nicknames").striped(true).show(ui, |ui| {
-            ui.label("classe(s)");
+            ui.label("Classe(s)");
             ui.label(stats.numbers_of_classes.to_string());
             ui.end_row();
 
-            ui.label("votes donnés");
+            ui.label("Votes donnés");
             ui.label(stats.total_votes.to_string());
             ui.end_row();
 
-            ui.label("surnoms proposés");
+            ui.label("Surnoms proposés");
             ui.label(stats.total_propositions.to_string());
             ui.end_row();
 
-            ui.label("surnoms reçu");
+            ui.label("Surnoms reçus");
             ui.label(stats.numbers_of_nickname.to_string());
             ui.end_row();
         });
