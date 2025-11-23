@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
 <head>
-    <title>sweat voter</title>
+    <title>Sweat Voter 3000</title>
 
     <!-- config for our rust wasm binary. go to https://trunkrs.dev/assets/#rust for more customization -->
     <link data-trunk rel="rust" data-wasm-opt="2" />
@@ -30,6 +30,9 @@
 	<link data-trunk rel="copy-file" href="assets/body.css" data-target-path="assets"/>
 	<link href="assets/body.css" rel="stylesheet" />
 	
+	<link data-trunk rel="copy-file" href="assets/modals.css" data-target-path="assets"/>
+	<link href="assets/modals.css" rel="stylesheet" />
+	
 	<!-- Link scripts -->
 	<link data-trunk rel="copy-file" href="assets/script.js" data-target-path="assets"/>
 	
@@ -52,42 +55,51 @@
 	<header class="header">
 		
 			<img class="banner" src="assets\banner.png" alt="Banner">
-			
 		</header>
 		
-	<div class="description">
 	
-	<p>Pour suivre les petites traditions du lycée Corneille, nous devons proposer des surnoms aux autres pour les sweats.</p>
-			
-	</div>
+	<nav class="navbar">
+		<button id="button_1" class="button">Instructions</button>
+		
+		<div id="modal_1" class = "modal">
+			<div class="modal-content">
+				<span class="close_1">&times;</span>
+				<p><b>Instructions</b></p>
+				<ul>
+				<li>Identifiants : Entrer son nom tel que affiché sur la liste (majuscules et accents compris).</li>
+				<li>Chaque participant peut proposer des noms (et le supprimer).</li>
+				<li>Tout participant peut retirer une proposition sur son profil.</li>
+				</ul>
+			</div>
+		</div>
+		
+		<button id="button_2" class="button">Le Lore</button>
+		<div id="modal_2" class = "modal">
+			<div class="modal-content">
+				<span class="close_2">&times;</span>
+				<p><b>Le Lore</b></p>
+				<ul>
+				<li>La longue tradition du Lycée Corneille, on propose des surnoms aux autres
+				et on l'imprime sur un sweat, à la vue de tous.</li>
+				</ul>
+			</div>
+		</div>
+		
+		<button id="button_3" class="button">Bouton</button>
+		<div id="modal_3" class = "modal">
+			<div class="modal-content">
+				<span class="close_3">&times;</span>
+				<p><b>C'est un bouton !</b></p>
+			</div>
+		</div>
+		
+	</nav>
 	
-	<div class="instr">
-	<div class="dropdown">
-        <button class="dropbtn">Instructions</button>
-        <div class="dropdown-content" id="myDropdown">
-		<ul class="liste_instru">
-            <li>Chaque participant dispose d'une voix par nom</li>
-			<li>Vous êtes libres de proposer des surnoms pour les autres</li>
-			<li>Vous pouvez changer vos votes</li>
-			<li>Si <strong>votre</strong> nom vous gêne, vous pouvez le supprimer</li>
-			<p></p>
-			<li>Entrez votre Nom Prénom, seul le premier mot du nom et du prénom, accent compris</li>
-		</ul>
-        </div>
-    </div>
-	</div>
 	
 	<script src="assets/script.js"></script>
 	
 	
-	
-	
-	
-	
-	<div id="egui-container">
 	<canvas id="the_canvas_id"></canvas>
-	</div>
-	
 	
 
     <!-- the loading spinner will be removed in main.rs -->

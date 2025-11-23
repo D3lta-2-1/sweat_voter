@@ -40,10 +40,10 @@ impl EditorSelector {
     }
 
     fn display_logout(&mut self, ui: &mut egui::Ui) -> bool {
-        ui.label(format!("connecté en tant que {}", self.name));
+        ui.label(format!("Connecté.e en tant que {}", self.name));
         ui.horizontal(|ui| {
-            let r = ui.button("se déconnecter").clicked();
-            if self.change_password.is_none() && ui.button("changer le mot de passe").clicked() {
+            let r = ui.button("Se déconnecter").clicked();
+            if self.change_password.is_none() && ui.button("Modifier le mot de passe").clicked() {
                 self.change_password = Some(PasswordSelector::default());
             }
             r
@@ -88,7 +88,7 @@ impl EditorSelector {
         let name_response = ui
             .add(
                 egui::TextEdit::singleline(&mut self.name)
-                    .hint_text("NOM Prénom")
+                    .hint_text("Identifiant")
                     .char_limit(30),
             )
             .lost_focus();
@@ -100,7 +100,7 @@ impl EditorSelector {
             )
             .lost_focus();
 
-        ui.button("connexion").clicked()
+        ui.button("Valider").clicked()
             || (name_response || password_response)
                 && !self.name.is_empty()
                 && !self.password.is_empty()
