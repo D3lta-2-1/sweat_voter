@@ -385,7 +385,7 @@ async fn cmd_input(
         }));
     };
 
-    let clap = Commands::clap().setting(AppSettings::NoBinaryName);
+    let clap = Commands::clap().setting(AppSettings::NoBinaryName).setting(AppSettings::ColorNever);
     let command = clap.get_matches_from_safe(inputs.iter().map(|input| input.trim()));
     let command = match command {
         Ok(command) => Commands::from_clap(&command),
