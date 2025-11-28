@@ -72,7 +72,7 @@ impl PersonSelector {
                     }
 
                     ui.heading("Participants");
-                    ui.label("choisissez un participant pour voir les surnoms");
+                    ui.label("Choix du participant");
                     for (id, name) in profils {
                         if ui
                             .selectable_value(&mut self.selected_profil, Some(*id), name.as_str())

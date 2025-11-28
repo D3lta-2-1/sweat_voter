@@ -100,9 +100,9 @@ impl NickNameViewer {
 
                     if profil.allowed_to_protect {
                         let result = if *protected {
-                            ui.button("déverrouiller")
+                            ui.button("Déverrouiller")
                         } else {
-                            ui.button("verrouiller")
+                            ui.button("Verrouiller")
                         };
                         if result.clicked() {
                             action =
@@ -125,7 +125,7 @@ impl NickNameViewer {
                 let pressed_enter = ui
                     .add(
                         egui::TextEdit::singleline(&mut self.new_nickname)
-                            .hint_text("nouveau surnom")
+                            .hint_text("Nouveau surnom")
                             .char_limit(30),
                     )
                     .lost_focus()

@@ -245,14 +245,19 @@ impl App for HttpApp {
 
         // Jasmine I'm going to kill you
         // ugliest way to leave free space
+		
+		// At least I don't store passwords in plaintext
+		// Ok my spacing was worse
+		// I suck at code
+		
         let spacing = if cfg!(target_arch = "wasm32") {
-            200.0
+            0.0
         } else {
             0.0
         };
 
         egui::TopBottomPanel::top("header").show(ctx, |ui| {
-            ui.add_space(spacing);
+            // ui.add_space(spacing);
 
             let action = self.editor_selector.update(ui);
 
