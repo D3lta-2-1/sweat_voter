@@ -47,9 +47,28 @@ pub mod c2s {
         pub protection_statut: bool,
     }
 }
+
 pub mod s2c {
     use crate::{ClassID, ProfilID};
     use serde::{Deserialize, Serialize};
+
+    #[derive(Deserialize, Serialize, Debug, Clone)]
+    pub struct S2cPackets(pub Vec<S2cPacket>);
+
+    impl S2cPackets {
+        pub fn one(p: S2cPacket) -> Self {
+            S2cPackets(vec![p])
+        }
+    }
+
+    #[derive(Deserialize, Serialize, Debug, Clone)]
+    pub enum S2cPacket {
+        CommandResponse(CommandResponse),
+        LoginResponse(LoginResponse),
+        NicknameList(NicknameList),
+        ProfilStats(ProfilStats),
+        Classes(Classes),
+    }
 
     #[derive(Deserialize, Serialize, Debug, Clone)]
     pub struct CommandResponse {
@@ -66,6 +85,10 @@ pub mod s2c {
     pub struct LoginResponse {
         pub logged: bool,
         pub allowed_to_use_cmd: bool,
+    }
+
+    #[derive(Deserialize, Serialize, Debug, Clone)]
+    pub struct Classes {
         pub classes: Vec<(ClassID, Class)>,
     }
 

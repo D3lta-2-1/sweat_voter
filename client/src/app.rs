@@ -8,24 +8,17 @@ use common::packets::c2s::{
     AskForNicknameList, AskForProfilStats, ChangePassword, CommandInput, DeleteNickname, Login,
     UpdateNicknameProtection, VoteNickname,
 };
-use common::packets::s2c::{CommandResponse, LoginResponse, NicknameList, ProfilStats};
+use common::packets::s2c::{CommandResponse, LoginResponse, S2cPacket, S2cPackets};
 use common::Identity;
 use eframe::App;
-use egui::{InnerResponse, Rect, TextBuffer};
+use egui::{InnerResponse, TextBuffer};
 use log::warn;
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
 
-enum IncomingPacket {
-    ClassList(LoginResponse),
-    NicknameList(NicknameList),
-    ProfilStats(ProfilStats),
-    CommandResponse(CommandResponse),
-}
-
 pub struct HttpApp {
-    incoming_message: Receiver<IncomingPacket>,
-    sender: Sender<IncomingPacket>,
+    incoming_message: Receiver<S2cPackets>,
+    sender: Sender<S2cPackets>,
     editor_selector: EditorSelector,
     class_selector: ClassSelector,
     person_selector: PersonSelector,
@@ -42,10 +35,7 @@ impl HttpApp {
     const ROOT: &'static str = "";
     const UNAUTHORIZED: u16 = 401;
 
-    fn fetch<T>(&self, request: ehttp::Request, deserializer: T)
-    where
-        T: Send + 'static + FnOnce(ehttp::Response) -> Option<IncomingPacket>,
-    {
+    fn fetch(&self, request: ehttp::Request) {
         let new_sender = self.sender.clone();
         let ctx = self.ctx.clone();
 
@@ -60,42 +50,35 @@ impl HttpApp {
 
             // in the case of an unauthorized action, we clear everything, and we wait for the user to log...
             if response.status == Self::UNAUTHORIZED {
-                let _ = new_sender
-                    .send(IncomingPacket::ClassList(LoginResponse::default()))
+                // TODO: HANDLE THIS CASE
+                /*let _ = new_sender
+                    .send(S2cPackets::ClassList(LoginResponse::default()))
                     .expect("Failed to channel packet");
-                ctx.request_repaint();
+                ctx.request_repaint(); */
                 return;
             }
 
-            if let Some(packet) = deserializer(response) {
+            if let Some(packet) = response.json().ok() {
                 let _ = new_sender.send(packet).expect("Failed to channel packet");
                 ctx.request_repaint();
             }
         });
     }
 
-    fn request_class_list(&mut self) {
+    fn request_classes(&mut self) {
         let request = ehttp::Request::get(format!("{}class_list", Self::ROOT));
-        self.fetch(request, |response| {
-            Some(IncomingPacket::ClassList(response.json().ok()?))
-        });
+        self.fetch(request);
     }
-
-    const NICKNAME_LIST_HANDLER: fn(ehttp::Response) -> Option<IncomingPacket> =
-        |response| Some(IncomingPacket::NicknameList(response.json().ok()?));
-
-    const LOGIN_RESPONSE_HANDLER: fn(ehttp::Response) -> Option<IncomingPacket> =
-        |response| Some(IncomingPacket::ClassList(response.json().ok()?));
 
     fn login(&mut self, identity: Identity) {
         let request = ehttp::Request::json(format!("{}login", Self::ROOT), &Login { identity })
             .expect("Failed to create request");
-        self.fetch(request, Self::LOGIN_RESPONSE_HANDLER);
+        self.fetch(request);
     }
 
     fn logout(&mut self) {
         let request = ehttp::Request::post(format!("{}logout", Self::ROOT), vec![]);
-        self.fetch(request, Self::LOGIN_RESPONSE_HANDLER)
+        self.fetch(request)
     }
 
     fn change_password(&mut self, new_password: String) {
@@ -104,15 +87,13 @@ impl HttpApp {
             &ChangePassword { new_password },
         )
         .expect("failed_to_create_request");
-        self.fetch(request, |_| None);
+        self.fetch(request)
     }
 
     fn input_cmd(&mut self, input: CommandInput) {
         let request = ehttp::Request::json(format!("{}cmd_input", Self::ROOT), &input)
             .expect("failed_to_create_request");
-        self.fetch(request, |response| {
-            Some(IncomingPacket::CommandResponse(response.json().ok()?))
-        });
+        self.fetch(request);
     }
 
     fn request_nickname_list(&mut self, ask_for_person_profil: AskForNicknameList) {
@@ -121,7 +102,7 @@ impl HttpApp {
             &ask_for_person_profil,
         )
         .expect("Failed to create request");
-        self.fetch(request, Self::NICKNAME_LIST_HANDLER);
+        self.fetch(request);
     }
 
     fn request_profil_stats(&mut self, ask_for_person_profil: AskForProfilStats) {
@@ -130,22 +111,20 @@ impl HttpApp {
             &ask_for_person_profil,
         )
         .expect("Failed to create request");
-        self.fetch(request, |response| {
-            Some(IncomingPacket::ProfilStats(response.json().ok()?))
-        });
+        self.fetch(request);
     }
 
     fn vote_nickname(&mut self, vote_nickname: VoteNickname) {
         let request = ehttp::Request::json(format!("{}vote_nickname", Self::ROOT), &vote_nickname)
             .expect("Failed to create request");
-        self.fetch(request, Self::NICKNAME_LIST_HANDLER);
+        self.fetch(request);
     }
 
     fn delete_nickname(&mut self, delete_nickname: DeleteNickname) {
         let request =
             ehttp::Request::json(format!("{}delete_nickname", Self::ROOT), &delete_nickname)
                 .expect("Failed to create request");
-        self.fetch(request, Self::NICKNAME_LIST_HANDLER);
+        self.fetch(request);
     }
 
     fn update_nickname_protection(&mut self, update_nickname_protection: UpdateNicknameProtection) {
@@ -154,31 +133,23 @@ impl HttpApp {
             &update_nickname_protection,
         )
         .expect("Failed to create request");
-        self.fetch(request, Self::NICKNAME_LIST_HANDLER);
+        self.fetch(request);
     }
 
     fn check_incoming(&mut self) {
         let mut should_update_viewed_profil = false;
 
-        for message in self.incoming_message.try_iter() {
+        for message in self
+            .incoming_message
+            .try_iter()
+            .flat_map(|packets| packets.0.into_iter())
+        {
             match message {
-                IncomingPacket::ClassList(class_list) => {
+                S2cPacket::LoginResponse(class_list) => {
                     let LoginResponse {
                         logged,
                         allowed_to_use_cmd,
-                        mut classes,
                     } = class_list;
-                    self.class_selector.set_classes(
-                        classes
-                            .iter_mut()
-                            .map(|(id, class)| (*id, class.name.take()))
-                            .collect(),
-                    );
-                    self.person_selector.set_classes(
-                        classes
-                            .into_iter()
-                            .map(|(class_id, class)| (class_id, class.profiles)),
-                    );
                     should_update_viewed_profil = true;
                     self.editor_selector.set_logged(logged);
                     self.console = if allowed_to_use_cmd {
@@ -194,11 +165,26 @@ impl HttpApp {
                         None
                     };
                 }
-                IncomingPacket::NicknameList(person_profil_response) => {
+                S2cPacket::Classes(mut classes) => {
+                    self.class_selector.set_classes(
+                        classes
+                            .classes
+                            .iter_mut()
+                            .map(|(id, class)| (*id, class.name.take()))
+                            .collect(),
+                    );
+                    self.person_selector.set_classes(
+                        classes
+                            .classes
+                            .into_iter()
+                            .map(|(class_id, class)| (class_id, class.profiles)),
+                    );
+                }
+                S2cPacket::NicknameList(person_profil_response) => {
                     self.nickname_viewer.set_profil(person_profil_response)
                 }
-                IncomingPacket::ProfilStats(stats) => self.stats_viewer.set_stats(stats),
-                IncomingPacket::CommandResponse(CommandResponse { text }) => {
+                S2cPacket::ProfilStats(stats) => self.stats_viewer.set_stats(stats),
+                S2cPacket::CommandResponse(CommandResponse { text }) => {
                     if let Some(console) = &mut self.console {
                         console.write(&text);
                         console.prompt();
@@ -231,10 +217,8 @@ impl HttpApp {
             console: None,
             ctx,
         };
-        this.request_class_list();
-        if !this.editor_selector.is_empty() {
-            this.login(this.editor_selector.get_identity())
-        }
+        this.request_classes();
+        this.login(this.editor_selector.get_identity());
         this
     }
 }
@@ -243,22 +227,7 @@ impl App for HttpApp {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         self.check_incoming();
 
-        // Jasmine I'm going to kill you
-        // ugliest way to leave free space
-		
-		// At least I don't store passwords in plaintext
-		// Ok my spacing was worse
-		// I suck at code
-		
-        let spacing = if cfg!(target_arch = "wasm32") {
-            0.0
-        } else {
-            0.0
-        };
-
         egui::TopBottomPanel::top("header").show(ctx, |ui| {
-            // ui.add_space(spacing);
-
             let action = self.editor_selector.update(ui);
 
             match action {
@@ -285,7 +254,6 @@ impl App for HttpApp {
             let inner = egui::Window::new("CMD")
                 .default_open(false)
                 .default_height(600.0)
-                .constrain_to(Rect::everything_below(spacing))
                 .resizable(true)
                 .show(ctx, |ui| {
                     let result = console.draw(ui);

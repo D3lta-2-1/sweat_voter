@@ -595,7 +595,7 @@ impl DataServer {
     //------------ Network related functions ------------
 
     /// build the list of classes
-    pub fn class_list(&self, profil: Option<ProfilID>) -> s2c::LoginResponse {
+    pub fn class_list(&self) -> s2c::Classes {
         // this could be stored to avoid rebuild...
         let classes: Vec<_> = self
             .classes
@@ -610,10 +610,7 @@ impl DataServer {
                             .iter()
                             .flat_map(|profil_id| {
                                 let profil = self.id_to_profil.get(profil_id)?;
-                                Some((
-                                    *profil_id,
-                                    profil.identity.name.clone(),
-                                ))
+                                Some((*profil_id, profil.identity.name.clone()))
                             })
                             .collect(),
                     },
@@ -621,6 +618,10 @@ impl DataServer {
             })
             .collect();
 
+        s2c::Classes { classes }
+    }
+
+    pub fn logged(&self, profil: Option<ProfilID>) -> s2c::LoginResponse {
         let allowed_to_use_cmd = match profil {
             None => false,
             Some(id) => self
@@ -630,7 +631,6 @@ impl DataServer {
                 .unwrap_or(false),
         };
         s2c::LoginResponse {
-            classes,
             logged: profil.is_some(),
             allowed_to_use_cmd,
         }
