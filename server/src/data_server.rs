@@ -48,8 +48,8 @@ impl Error for ServerError {}
 
 #[derive(Debug)]
 pub struct Class {
-    name: String,
-    profiles: HashSet<ProfilID>,
+    pub name: String,
+    pub profiles: HashSet<ProfilID>,
 }
 
 /// A single Nickname proposition
@@ -332,6 +332,17 @@ impl DataServer {
         Ok(())
     }
 
+
+
+    pub fn get_class(&mut self, class_name: String) -> Result<&Class, ServerError> {
+        let (_, class) = self
+            .classes
+            .iter()
+            .find(|(_, class)| class.name == class_name)
+            .ok_or(ClassDoesntExist)?;
+        Ok(class)
+    }
+
     pub fn delete_class(&mut self, name: String) -> Result<(), ServerError> {
         let id = self
             .classes
@@ -447,6 +458,23 @@ impl DataServer {
         } else {
             Err(PersonAlreadyExist)
         }
+    }
+
+    pub fn add_many_to_class(
+        &mut self,
+        profil_ids: impl Iterator<Item =ProfilID>,
+        class_name: &str,
+    ) -> Result<(), ServerError> {
+        let (_, class) = self
+            .classes
+            .iter_mut()
+            .find(|(_, class)| class.name == class_name)
+            .ok_or(ClassDoesntExist)?;
+
+        for profil_id in profil_ids {
+            class.profiles.insert(profil_id);
+        }
+        Ok(())
     }
 
     pub fn remove_from_class(

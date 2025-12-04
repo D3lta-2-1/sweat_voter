@@ -1,7 +1,7 @@
 use crate::commands::{
     AddClass, AddLonelyToClass, AddProfil, AddToClass, ChangeName, ChangePassword,
     ChangePermission, DeleteClass, DeleteProfil, PermissionKind, RemoveFromClass, ViewNicknameData,
-    ViewPassword,
+    ViewPassword, AddClassToClass
 };
 use crate::data_server::{DataServer, NickNameProposition, ServerError};
 use common::ProfilID;
@@ -39,7 +39,7 @@ pub enum Commands {
     RemoveFromClass(RemoveFromClass),
     ChangePerm(ChangePermission),
     ViewNicknameData(ViewNicknameData),
-
+    AddClassToClass(AddClassToClass)
 }
 
 /// used to signal if a something needs to be resent to the client.
@@ -205,9 +205,7 @@ impl AppState {
             }
             Commands::AddLonelyPeopleToClass(AddLonelyToClass { class }) => {
                 let people = server.find_id_out_of_any_class();
-                for id in people {
-                    server.add_to_class(id, &class)?;
-                }
+                server.add_many_to_class(people.into_iter(), &class)?;
                 CommandOutput::update_classes()
             }
             Commands::ViewPassword(ViewPassword { name }) => {
@@ -271,6 +269,11 @@ impl AppState {
                     writeln!(&mut output, "\t{}", server.get_name(*voters).unwrap_or("[unknown]")).unwrap();
                 }
                 CommandOutput::with_text(output)
+            },
+            Commands::AddClassToClass(AddClassToClass { class, target }) => {
+                let class: Vec<_> = server.get_class(class)?.profiles.iter().copied().collect();
+                server.add_many_to_class(class.into_iter(), &target)?;
+                CommandOutput::update_classes()
             }
         })
     }

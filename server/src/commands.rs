@@ -109,3 +109,10 @@ pub struct ChangePermission {
     #[structopt(subcommand)]
     pub kind: PermissionKind,
 }
+
+#[derive(Debug, StructOpt)]
+#[structopt(about = "add all participants from a class to another")]
+pub struct AddClassToClass {
+    pub class: String,
+    pub target: String,
+}
