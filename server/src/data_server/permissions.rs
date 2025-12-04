@@ -51,10 +51,22 @@ pub struct Permissions {
     #[serde(skip_serializing_if = "InteractionPermission::is_forbidden")]
     #[serde(default = "InteractionPermission::forbidden")]
     pub protect_nickname: InteractionPermission,
-
+    /// should we display cmd ?
     #[serde(skip_serializing_if = "not")]
     #[serde(default = "bool::default")]
     pub allowed_to_use_cmd: bool,
+    /// can this user view others password ?
+    #[serde(skip_serializing_if = "not")]
+    #[serde(default = "bool::default")]
+    pub allowed_to_change_passwords: bool,
+    /// can this user view nickname datas ?
+    #[serde(skip_serializing_if = "not")]
+    #[serde(default = "bool::default")]
+    pub allowed_to_view_nickname_data: bool,
+    ///  other users permissions
+    #[serde(skip_serializing_if = "not")]
+    #[serde(default = "bool::default")]
+    pub able_to_change_other_perm: bool,
 }
 
 fn not(b: &bool) -> bool {
@@ -68,6 +80,9 @@ impl Default for Permissions {
             delete: InteractionPermission::YourSelf,
             protect_nickname: InteractionPermission::Forbidden,
             allowed_to_use_cmd: false,
+            allowed_to_change_passwords: false,
+            allowed_to_view_nickname_data: false,
+            able_to_change_other_perm: false,
         }
     }
 }

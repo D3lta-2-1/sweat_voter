@@ -1,14 +1,15 @@
 use crate::commands::{
     AddClass, AddLonelyToClass, AddProfil, AddToClass, ChangeName, ChangePassword,
-    ChangePermission, DeleteClass, DeleteProfil, PermissionKind, RemoveFromClass, ViewPassword,
+    ChangePermission, DeleteClass, DeleteProfil, PermissionKind, RemoveFromClass, ViewNicknameData,
+    ViewPassword,
 };
 use crate::data_server::{DataServer, NickNameProposition, ServerError};
-use crate::Commands;
 use common::ProfilID;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::File;
 use std::sync::Mutex;
+use structopt::StructOpt;
 use tracing::info;
 
 #[derive(Copy, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -20,6 +21,25 @@ pub enum SaveFormat {
 pub struct AppState {
     pub data_server: DataServer,
     pub save_format: SaveFormat,
+}
+
+#[derive(StructOpt)]
+pub enum Commands {
+    Exit,
+    AddProfil(AddProfil),
+    DeleteProfil(DeleteProfil),
+    AddClass(AddClass),
+    DeleteClass(DeleteClass),
+    ViewLonelyPeople,
+    AddLonelyPeopleToClass(AddLonelyToClass),
+    ViewPassword(ViewPassword),
+    ChangePassword(ChangePassword),
+    ChangeName(ChangeName),
+    AddToClass(AddToClass),
+    RemoveFromClass(RemoveFromClass),
+    ChangePerm(ChangePermission),
+    ViewNicknameData(ViewNicknameData),
+
 }
 
 /// used to signal if a something needs to be resent to the client.
@@ -40,6 +60,13 @@ impl CommandOutput {
         Self {
             message: None,
             changed_data: Some(ChangedData::Classes),
+        }
+    }
+
+    pub fn with_text(text: String) -> Self {
+        Self {
+            message: Some(text),
+            changed_data: None,
         }
     }
 }
@@ -135,7 +162,11 @@ impl AppState {
         })
     }
 
-    pub fn execute_command(&mut self, command: Commands) -> Result<CommandOutput, ServerError> {
+    pub fn execute_command(
+        &mut self,
+        admin: Option<ProfilID>,
+        command: Commands,
+    ) -> Result<CommandOutput, ServerError> {
         let server = &mut self.data_server;
         Ok(match command {
             Commands::Exit => CommandOutput {
@@ -170,10 +201,7 @@ impl AppState {
                 for people in peoples {
                     writeln!(&mut output, "{}", people).unwrap();
                 }
-                CommandOutput {
-                    message: Some(output),
-                    changed_data: None,
-                }
+                CommandOutput::with_text(output)
             }
             Commands::AddLonelyPeopleToClass(AddLonelyToClass { class }) => {
                 let people = server.find_id_out_of_any_class();
@@ -184,15 +212,12 @@ impl AppState {
             }
             Commands::ViewPassword(ViewPassword { name }) => {
                 let id = server.get_profil_id(&name)?;
-                let password = server.get_password(id)?;
-                CommandOutput {
-                    message: Some(format!("{}'s password is {}", name, password)),
-                    changed_data: None,
-                }
+                let password = server.get_password(admin, id)?;
+                CommandOutput::with_text(format!("{}'s password is {}", name, password))
             }
             Commands::ChangePassword(ChangePassword { name, new_password }) => {
                 let id = server.get_profil_id(&name)?;
-                server.change_password(id, new_password)?;
+                server.change_password(admin, id, new_password)?;
                 CommandOutput::default()
             }
             Commands::ChangeName(ChangeName { name, new_name }) => {
@@ -217,14 +242,35 @@ impl AppState {
             }
             Commands::ChangePerm(ChangePermission { name, kind }) => {
                 let id = server.get_profil_id(&name)?;
-                let perm = server.get_permissions_mut(id)?;
+                let perm = server.get_permissions_mut(admin, id)?;
                 match kind {
                     PermissionKind::Vote { permission } => perm.vote = permission,
                     PermissionKind::Delete { permission } => perm.delete = permission,
                     PermissionKind::Protect { permission } => perm.protect_nickname = permission,
                     PermissionKind::UseCmd { permission } => perm.allowed_to_use_cmd = permission,
+                    PermissionKind::ChangePasswords { permission } => {
+                        perm.allowed_to_change_passwords = permission
+                    }
+                    PermissionKind::ViewNicknameData { permission } => {
+                        perm.allowed_to_view_nickname_data = permission
+                    }
+                    PermissionKind::ChangeOtherPerm { permission } => {
+                        perm.able_to_change_other_perm = permission
+                    }
                 }
                 CommandOutput::default()
+            }
+            Commands::ViewNicknameData(ViewNicknameData { owner, nickname }) => {
+                use std::fmt::Write;
+
+                let proposition =  server.get_nickname(admin, owner, nickname)?;
+
+                let mut output = String::new();
+                writeln!(&mut output, "{} as been proposed by {} and voted by:", proposition.proposition, server.get_name(proposition.author).unwrap_or("[unknown]")).unwrap();
+                for voters in &proposition.votes {
+                    writeln!(&mut output, "\t{}", server.get_name(*voters).unwrap_or("[unknown]")).unwrap();
+                }
+                CommandOutput::with_text(output)
             }
         })
     }

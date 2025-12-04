@@ -2,11 +2,7 @@ mod app_state;
 mod commands;
 mod data_server;
 
-use crate::app_state::{AppState, ChangedData, CommandOutput, SaveFormat};
-use crate::commands::{
-    AddClass, AddLonelyToClass, AddProfil, AddToClass, ChangeName, ChangePassword,
-    ChangePermission, DeleteClass, DeleteProfil, RemoveFromClass, ViewPassword,
-};
+use crate::app_state::{AppState, ChangedData, CommandOutput, Commands, SaveFormat};
 use crate::data_server::permissions::Permissions;
 use crate::data_server::DataServer;
 use actix_cors::Cors;
@@ -74,7 +70,7 @@ async fn change_password(
         return HttpResponse::Unauthorized();
     };
     if server
-        .change_password(id, new_password.0.new_password)
+        .change_password(None, id, new_password.0.new_password) // changing its own password doesn't involve permissions
         .is_ok()
     {
         HttpResponse::Ok()
@@ -236,7 +232,7 @@ async fn cmd_input(
         }
     };
 
-    let result = app.execute_command(command);
+    let result = app.execute_command(Some(id), command);
     let (text, action) = match result {
         Ok(CommandOutput {
             message: None,
@@ -269,23 +265,6 @@ async fn save_loop(state: web::Data<Mutex<AppState>>, duration: Duration) {
     }
 }
 
-#[derive(StructOpt)]
-enum Commands {
-    Exit,
-    AddProfil(AddProfil),
-    DeleteProfil(DeleteProfil),
-    AddClass(AddClass),
-    DeleteClass(DeleteClass),
-    ViewLonelyPeople,
-    AddLonelyPeopleToClass(AddLonelyToClass),
-    ViewPassword(ViewPassword),
-    ChangePassword(ChangePassword),
-    ChangeName(ChangeName),
-    AddToClass(AddToClass),
-    RemoveFromClass(RemoveFromClass),
-    ChangePerm(ChangePermission),
-}
-
 fn wait_for_cmd_input(server: web::Data<Mutex<AppState>>) {
     let mut command = String::new();
     loop {
@@ -316,7 +295,7 @@ fn wait_for_cmd_input(server: web::Data<Mutex<AppState>>) {
             return;
         }
 
-        let result = server.lock().unwrap().execute_command(command);
+        let result = server.lock().unwrap().execute_command(None, command);
         match result {
             Ok(CommandOutput { message: None, .. }) => println!("action performed successfully!"),
             Ok(CommandOutput {

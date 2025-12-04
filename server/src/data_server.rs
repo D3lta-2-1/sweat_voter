@@ -1,8 +1,6 @@
 use crate::data_server::mutation_tracker::MutationTracker;
 use crate::data_server::permissions::{InteractionPermission, Permissions};
-use crate::data_server::ServerError::{
-    ClassAlreadyExist, ClassDoesntExist, PersonAlreadyExist, PersonDoesntExist,
-};
+use crate::data_server::ServerError::{ClassAlreadyExist, ClassDoesntExist, NickNameDoestExist, NotPermitted, PersonAlreadyExist, PersonDoesntExist};
 use common::packets::s2c;
 use common::{ClassID, Identity, ProfilID};
 use serde::{Deserialize, Serialize};
@@ -27,8 +25,10 @@ pub struct Profil {
 pub enum ServerError {
     PersonDoesntExist,
     ClassDoesntExist,
+    NickNameDoestExist,
     PersonAlreadyExist,
     ClassAlreadyExist,
+    NotPermitted,
 }
 
 impl Display for ServerError {
@@ -36,8 +36,10 @@ impl Display for ServerError {
         match self {
             PersonDoesntExist => f.write_str("This person does not exist"),
             ClassDoesntExist => f.write_str("This class does not exist"),
+            NickNameDoestExist =>  f.write_str("This nickname does not exist"),
             PersonAlreadyExist => f.write_str("This person already exists"),
             ClassAlreadyExist => f.write_str("This class already exists"),
+            NotPermitted => f.write_str("You don't have enough permissions to perform this action"),
         }
     }
 }
@@ -53,10 +55,10 @@ pub struct Class {
 /// A single Nickname proposition
 #[derive(Serialize, Deserialize, Clone)]
 pub struct NickNameProposition {
-    author: ProfilID,
-    proposition: String,
-    votes: Vec<ProfilID>,
-    protected: bool,
+    pub author: ProfilID,
+    pub proposition: String,
+    pub votes: Vec<ProfilID>,
+    pub protected: bool,
 }
 
 /// Global storage of most of the server content
@@ -370,22 +372,52 @@ impl DataServer {
         people
     }
 
-    pub fn get_password(&self, id: ProfilID) -> Result<String, ServerError> {
+    pub fn get_password(&self, admin: Option<ProfilID>, id: ProfilID) -> Result<String, ServerError> {
+        if let Some(admin) = admin {
+            if !self.get_permission(admin).map(|p| p.allowed_to_change_passwords) .unwrap_or(false) {
+                return Err(NotPermitted)
+            }
+        }
+
         let profil = self.id_to_profil.get(&id).ok_or(PersonDoesntExist)?;
         Ok(profil.identity.password.clone())
     }
 
     pub fn change_password(
         &mut self,
+        admin: Option<ProfilID>,
         id: ProfilID,
         new_password: String,
     ) -> Result<(), ServerError> {
+        if let Some(admin) = admin {
+            if !self.get_permission(admin).map(|p| p.allowed_to_change_passwords).unwrap_or(false) {
+                return Err(NotPermitted);
+            }
+        }
+
         let profil = self.id_to_profil.get_mut(&id).ok_or(PersonDoesntExist)?;
         profil.identity.password = new_password;
         Ok(())
     }
 
-    pub fn get_permissions_mut(&mut self, id: ProfilID) -> Result<&mut Permissions, ServerError> {
+    pub fn get_nickname(&self, admin: Option<ProfilID>, owner: String, nickname: String) -> Result<&NickNameProposition, ServerError> {
+        if let Some(admin) = admin {
+            if !self.get_permission(admin).map(|p| p.allowed_to_view_nickname_data).unwrap_or(false) {
+                return Err(NotPermitted);
+            }
+        }
+        let id = self.name_to_id.get(&owner).ok_or(PersonDoesntExist)?;
+        let propositions = self.nick_name_proposition.get(id).ok_or(NickNameDoestExist)?;
+        propositions.iter().find(|nickname_prop| nickname_prop.proposition == nickname).ok_or(NickNameDoestExist)
+    }
+
+    pub fn get_permissions_mut(&mut self, admin: Option<ProfilID>, id: ProfilID) -> Result<&mut Permissions, ServerError> {
+        if let Some(admin) = admin {
+            if !self.get_permission(admin).map(|p| p.able_to_change_other_perm).unwrap_or(false) {
+                return Err(NotPermitted);
+            }
+        }
+
         self.id_to_profil
             .get_mut(&id)
             .map(|v| &mut v.permissions)
@@ -590,6 +622,10 @@ impl DataServer {
 
     pub fn get_profil_id(&self, name: &String) -> Result<ProfilID, ServerError> {
         self.name_to_id.get(name).cloned().ok_or(PersonDoesntExist)
+    }
+
+    pub fn get_name(&self, profil_id: ProfilID) -> Option<&str> {
+        self.id_to_profil.get(&profil_id).map(|p| p.identity.name.as_str())
     }
 
     //------------ Network related functions ------------

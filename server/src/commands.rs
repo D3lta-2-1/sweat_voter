@@ -81,6 +81,25 @@ pub enum PermissionKind {
         #[structopt(parse(try_from_str))]
         permission: bool,
     },
+    ChangePasswords {
+        #[structopt(parse(try_from_str))]
+        permission: bool,
+    },
+    ViewNicknameData {
+        #[structopt(parse(try_from_str))]
+        permission: bool,
+    },
+    ChangeOtherPerm {
+        #[structopt(parse(try_from_str))]
+        permission: bool,
+    }
+}
+
+#[derive(Debug, StructOpt)]
+#[structopt(about = "View author and voters of a given nickname")]
+pub struct ViewNicknameData{
+    pub owner: String,
+    pub nickname: String,
 }
 
 #[derive(Debug, StructOpt)]
