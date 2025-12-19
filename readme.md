@@ -5,7 +5,7 @@
 cd client
 trunk build --release
 cd ..
-cargo build --package server --release
+cargo build --package api --release
 ```
 
 Il est possible de produire des builds du client pour desktop et android
