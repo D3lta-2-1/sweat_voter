@@ -1,13 +1,12 @@
-use std::fmt;
-use std::fmt::{Debug, Display, Formatter};
-use std::str::FromStr;
+use crate::common::{Credentials, ProfilID};
+use crate::{list_classes, login};
 use dioxus::fullstack::Form;
 use dioxus::prelude::*;
 use dioxus::router::{FromHashFragment, RouterConfig};
-use crate::common::{Credentials, ProfilID};
-use crate::{list_classes, login};
-
-
+use dioxus_html::img;
+use std::fmt;
+use std::fmt::{Debug, Display, Formatter};
+use std::str::FromStr;
 
 #[rustfmt::skip]
 #[derive(Clone, Routable)]
@@ -31,7 +30,6 @@ pub enum Route {
 
 #[component]
 pub fn Home() -> Element {
-
     let classes = use_resource(list_classes);
 
     rsx! {
@@ -85,9 +83,12 @@ pub fn ClassPage(class_name: String, profil_id: Option<u32>) -> Element {
     }
 }
 
+static CSS: Asset = asset!("/assets/main.css");
+
 #[component]
 pub fn LoginPage() -> Element {
     rsx!(
+        document::Stylesheet { href: CSS }
         form {
             onsubmit: move |evt: FormEvent| async move {
                 evt.prevent_default();
@@ -101,11 +102,38 @@ pub fn LoginPage() -> Element {
                 }
                 Ok(())
             },
-            input { r#type: "text", id: "name", name: "name" }
-            label { "NOM Prenom" }
-            input { r#type: "password", id: "password", name: "password" }
-            label { "Mot de passe" }
-            button { "Login" }
+            div{class:"navbar",
+                img { class:"navbar_logo",
+                        src: asset!("/assets/images/logo-corneille.svg")
+                }
+                h3{ class:"titre",
+                    "Prépa Pierre Corneille"
+                }
+                li{class:"navbar_element",
+                    "Home"
+                }
+                li{class:"navbar_element",
+                    "Sweat"
+                }
+
+            }
+
+            div{class:"auth",
+                h1{"Identification"}
+            }
+
+            div{ class : "login_container",
+                    div { class : "login_box",
+                        div { label { "Identifiants" } }
+                        div {input { r#type: "text", id: "name", name: "name" }}
+
+                        div{label { "Mot de passe" }}
+                        div{input { r#type: "password", id: "password", name: "password" }}
+
+                        div{ class : "login_button_container",
+                                button {class : "login_button", "Confirmer" }}
+                        }
+            }
         }
     )
 }
