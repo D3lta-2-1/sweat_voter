@@ -1,11 +1,12 @@
 # Voteur de sweat des prépas du lycée Corneille
 
-## Build Desktop 
-```bash
-cd client
-trunk build --release
-cd ..
-cargo build --package api --release
-```
 
-Il est possible de produire des builds du client pour desktop et android
+
+
+## Lancer le project
+
+ce projet a besoin de [dioxus-cli](https://dioxuslabs.com/learn/0.7/getting_started/)
+
+```bash
+dx serve --package api
+```
