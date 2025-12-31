@@ -2,35 +2,35 @@
 mod app_state;
 #[cfg(feature = "server")]
 mod commands;
+mod common;
 #[cfg(feature = "server")]
 mod data_server;
-mod common;
 mod ui;
 
 #[cfg(feature = "server")]
 use {
     crate::app_state::{AppState, CommandOutput, Commands, SaveFormat},
-    std::time::Duration,
-    structopt::clap::AppSettings,
-    structopt::StructOpt,
+    axum::Extension,
     std::fs::File,
     std::io::stdin,
     std::net::{IpAddr, Ipv4Addr, SocketAddr},
-    axum::Extension,
+    std::time::Duration,
+    structopt::clap::AppSettings,
+    structopt::StructOpt,
 };
 
-use dioxus_fullstack::form::Form;
-use tracing::info;
 use crate::common::Credentials;
-use dioxus::prelude::*;
-use serde::{Deserialize, Serialize};
 use crate::ui::App;
+use dioxus::prelude::*;
+use dioxus_fullstack::form::Form;
+use serde::{Deserialize, Serialize};
+use tracing::info;
 
 extern crate tracing;
 
 #[cfg(feature = "server")]
 async fn save_loop(state: AppState, duration: Duration) {
-    let mut interval =tokio::time::interval(duration);
+    let mut interval = tokio::time::interval(duration);
     loop {
         interval.tick().await;
         state.save()
@@ -110,7 +110,7 @@ pub async fn login(Form(creds): Form<Credentials>) -> Result<bool> {
     };
 
     if auth_session.login(&user).await.is_err() {
-        return Ok(false)
+        return Ok(false);
     }
     println!("success");
     Ok(true)
@@ -133,9 +133,9 @@ fn main() {
 
 #[cfg(feature = "server")]
 #[tokio::main]
-async fn main()  -> std::io::Result<()> {
-    use tower_sessions::{MemoryStore, SessionManagerLayer};
+async fn main() -> std::io::Result<()> {
     use axum_login::AuthManagerLayerBuilder;
+    use tower_sessions::{MemoryStore, SessionManagerLayer};
 
     let Ok(file) = File::open("config.json") else {
         let config = File::create("config.json").expect("failed to create config");
@@ -160,9 +160,7 @@ async fn main()  -> std::io::Result<()> {
     // TODO: this doesn't work well with dioxus CLI
     let signal = async |_state| {
         //spawn_blocking(move || wait_for_cmd_input(state))
-        tokio::signal::ctrl_c()
-            .await
-            .unwrap();
+        tokio::signal::ctrl_c().await.unwrap();
     };
 
     let router = dioxus::server::router(App)

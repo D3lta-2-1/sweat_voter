@@ -1,5 +1,5 @@
-use crate::data_server::permissions::Permissions;
 use crate::common::{ClassID, Credentials, ProfilID};
+use crate::data_server::permissions::Permissions;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]

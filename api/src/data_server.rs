@@ -1,3 +1,4 @@
+use crate::common::{ClassID, Credentials, ProfilID};
 use crate::data_server::mutation_tracker::MutationTracker;
 use crate::data_server::permissions::{InteractionPermission, Permissions};
 use crate::data_server::ServerError::*;
@@ -7,7 +8,6 @@ use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 use std::hash::RandomState;
-use crate::common::{ClassID, Credentials, ProfilID};
 
 pub mod mutation_tracker;
 pub mod permissions;
@@ -28,7 +28,7 @@ impl Display for ServerError {
         match self {
             PersonDoesntExist => f.write_str("This person does not exist"),
             ClassDoesntExist => f.write_str("This class does not exist"),
-            NickNameDoestExist =>  f.write_str("This nickname does not exist"),
+            NickNameDoestExist => f.write_str("This nickname does not exist"),
             PersonAlreadyExist => f.write_str("This person already exists"),
             ClassAlreadyExist => f.write_str("This class already exists"),
             NotPermitted => f.write_str("You don't have enough permissions to perform this action"),
@@ -42,7 +42,7 @@ impl Error for ServerError {}
 pub struct Class {
     pub name: String,
     pub profiles: HashSet<ProfilID>,
-    pub id: ClassID
+    pub id: ClassID,
 }
 
 pub struct Profil {
@@ -332,8 +332,6 @@ impl DataServer {
         Ok(())
     }
 
-
-
     pub fn get_class(&mut self, class_name: String) -> Result<&Class, ServerError> {
         self.classes.get(&class_name).ok_or(ClassDoesntExist)
     }
@@ -373,10 +371,18 @@ impl DataServer {
         people
     }
 
-    pub fn get_password(&self, admin: Option<ProfilID>, id: ProfilID) -> Result<String, ServerError> {
+    pub fn get_password(
+        &self,
+        admin: Option<ProfilID>,
+        id: ProfilID,
+    ) -> Result<String, ServerError> {
         if let Some(admin) = admin {
-            if !self.get_permission(admin).map(|p| p.allowed_to_change_passwords) .unwrap_or(false) {
-                return Err(NotPermitted)
+            if !self
+                .get_permission(admin)
+                .map(|p| p.allowed_to_change_passwords)
+                .unwrap_or(false)
+            {
+                return Err(NotPermitted);
             }
         }
 
@@ -391,7 +397,11 @@ impl DataServer {
         new_password: String,
     ) -> Result<(), ServerError> {
         if let Some(admin) = admin {
-            if !self.get_permission(admin).map(|p| p.allowed_to_change_passwords).unwrap_or(false) {
+            if !self
+                .get_permission(admin)
+                .map(|p| p.allowed_to_change_passwords)
+                .unwrap_or(false)
+            {
                 return Err(NotPermitted);
             }
         }
@@ -401,20 +411,43 @@ impl DataServer {
         Ok(())
     }
 
-    pub fn get_nickname(&self, admin: Option<ProfilID>, owner: String, nickname: String) -> Result<&NickNameProposition, ServerError> {
+    pub fn get_nickname(
+        &self,
+        admin: Option<ProfilID>,
+        owner: String,
+        nickname: String,
+    ) -> Result<&NickNameProposition, ServerError> {
         if let Some(admin) = admin {
-            if !self.get_permission(admin).map(|p| p.allowed_to_view_nickname_data).unwrap_or(false) {
+            if !self
+                .get_permission(admin)
+                .map(|p| p.allowed_to_view_nickname_data)
+                .unwrap_or(false)
+            {
                 return Err(NotPermitted);
             }
         }
         let id = self.name_to_id.get(&owner).ok_or(PersonDoesntExist)?;
-        let propositions = self.nick_name_proposition.get(id).ok_or(NickNameDoestExist)?;
-        propositions.iter().find(|nickname_prop| nickname_prop.proposition == nickname).ok_or(NickNameDoestExist)
+        let propositions = self
+            .nick_name_proposition
+            .get(id)
+            .ok_or(NickNameDoestExist)?;
+        propositions
+            .iter()
+            .find(|nickname_prop| nickname_prop.proposition == nickname)
+            .ok_or(NickNameDoestExist)
     }
 
-    pub fn get_permissions_mut(&mut self, admin: Option<ProfilID>, id: ProfilID) -> Result<&mut Permissions, ServerError> {
+    pub fn get_permissions_mut(
+        &mut self,
+        admin: Option<ProfilID>,
+        id: ProfilID,
+    ) -> Result<&mut Permissions, ServerError> {
         if let Some(admin) = admin {
-            if !self.get_permission(admin).map(|p| p.able_to_change_other_perm).unwrap_or(false) {
+            if !self
+                .get_permission(admin)
+                .map(|p| p.able_to_change_other_perm)
+                .unwrap_or(false)
+            {
                 return Err(NotPermitted);
             }
         }
@@ -452,7 +485,7 @@ impl DataServer {
 
     pub fn add_many_to_class(
         &mut self,
-        profil_ids: impl Iterator<Item =ProfilID>,
+        profil_ids: impl Iterator<Item = ProfilID>,
         class_name: &str,
     ) -> Result<(), ServerError> {
         let (_, class) = self
@@ -663,11 +696,7 @@ impl DataServer {
     }
 
     pub fn list_classes(&self) -> Vec<String> {
-        self
-            .classes
-            .keys()
-            .cloned()
-            .collect()
+        self.classes.keys().cloned().collect()
     }
 
     //------------ Network related functions ------------

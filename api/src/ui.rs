@@ -59,28 +59,20 @@ pub fn App() -> Element {
 #[component]
 pub fn ClassPageDefault(class_name: String) -> Element {
     rsx! {
-        ClassPage {
-            class_name: class_name,
-            profil_id: None
-        }
+        ClassPage { class_name, profil_id: None }
     }
 }
 
 #[component]
 pub fn ClassPageWithId(class_name: String, id: u32) -> Element {
     rsx! {
-        ClassPage {
-            class_name: class_name,
-            profil_id: Some(id)
-        }
+        ClassPage { class_name, profil_id: Some(id) }
     }
 }
 
 #[component]
 pub fn ClassPage(class_name: String, profil_id: Option<u32>) -> Element {
-    rsx! {
-        "class name: {class_name}",
-    }
+    rsx! { "class name: {class_name}" }
 }
 
 static CSS: Asset = asset!("/assets/main.css");
@@ -102,37 +94,45 @@ pub fn LoginPage() -> Element {
                 }
                 Ok(())
             },
-            div{class:"navbar",
-                img { class:"navbar_logo",
-                        src: asset!("/assets/images/logo-corneille.svg")
+            div { class: "navbar",
+                img {
+                    class: "navbar_logo",
+                    src: asset!("/assets/images/logo-corneille.svg"),
                 }
-                h3{ class:"titre",
-                    "Prépa Pierre Corneille"
-                }
-                li{class:"navbar_element",
-                    "Home"
-                }
-                li{class:"navbar_element",
-                    "Sweat"
-                }
-
+                h3 { class: "titre", "Prépa Pierre Corneille" }
+                li { class: "navbar_element", "Home" }
+                li { class: "navbar_element", "Sweat" }
+            
             }
 
-            div{class:"auth",
-                h1{"Identification"}
+            div { class: "auth",
+                h1 { "Identification" }
             }
 
-            div{ class : "login_container",
-                    div { class : "login_box",
-                        div { label { "Identifiants" } }
-                        div {input { r#type: "text", id: "name", name: "name" }}
+            div { class: "login_container",
+                div { class: "login_box",
+                    div {
+                        label { "Identifiants" }
+                    }
+                    div {
+                        input { r#type: "text", id: "name", name: "name" }
+                    }
 
-                        div{label { "Mot de passe" }}
-                        div{input { r#type: "password", id: "password", name: "password" }}
-
-                        div{ class : "login_button_container",
-                                button {class : "login_button", "Confirmer" }}
+                    div {
+                        label { "Mot de passe" }
+                    }
+                    div {
+                        input {
+                            r#type: "password",
+                            id: "password",
+                            name: "password",
                         }
+                    }
+
+                    div { class: "login_button_container",
+                        button { class: "login_button", "Confirmer" }
+                    }
+                }
             }
         }
     )

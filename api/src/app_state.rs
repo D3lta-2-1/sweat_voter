@@ -1,15 +1,15 @@
 use crate::commands::*;
+use crate::common::{Credentials, ProfilID};
 use crate::data_server::{DataServer, NickNameProposition, ServerError};
+use axum_login::{AuthUser, AuthnBackend, UserId};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::File;
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::ops::Deref;
 use std::sync::{Arc, Mutex};
-use axum_login::{AuthUser, AuthnBackend, UserId};
 use structopt::StructOpt;
 use tracing::info;
-use crate::common::{Credentials, ProfilID};
 
 #[derive(Copy, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum SaveFormat {
@@ -42,7 +42,7 @@ impl Deref for AppState {
 #[derive(Copy, Clone, Debug)]
 pub struct User {
     pub id: ProfilID,
-    pub password_hash: u64
+    pub password_hash: u64,
 }
 
 impl AuthUser for User {
@@ -78,10 +78,7 @@ impl AuthnBackend for AppState {
         }))
     }
 
-    async fn get_user(
-        &self,
-        user_id: &UserId<Self>,
-    ) -> Result<Option<Self::User>, Self::Error> {
+    async fn get_user(&self, user_id: &UserId<Self>) -> Result<Option<Self::User>, Self::Error> {
         let server = self.data_server.lock().expect("mutex poisoned");
 
         let profil = server.get_profil(*user_id);
@@ -113,7 +110,7 @@ pub enum Commands {
     RemoveFromClass(RemoveFromClass),
     ChangePerm(ChangePermission),
     ViewNicknameData(ViewNicknameData),
-    AddClassToClass(AddClassToClass)
+    AddClassToClass(AddClassToClass),
 }
 
 /// used to signal if a something needs to be resent to the client.
@@ -337,15 +334,32 @@ impl AppStateInner {
             Commands::ViewNicknameData(ViewNicknameData { owner, nickname }) => {
                 use std::fmt::Write;
 
-                let proposition =  server.get_nickname(admin, owner, nickname)?;
+                let proposition = server.get_nickname(admin, owner, nickname)?;
 
                 let mut output = String::new();
-                writeln!(&mut output, "{} as been proposed by {} and voted by:", proposition.proposition, server.get_profil(proposition.author).map(|p| p.identity.name.as_str()).unwrap_or("[unknown]")).unwrap();
+                writeln!(
+                    &mut output,
+                    "{} as been proposed by {} and voted by:",
+                    proposition.proposition,
+                    server
+                        .get_profil(proposition.author)
+                        .map(|p| p.identity.name.as_str())
+                        .unwrap_or("[unknown]")
+                )
+                .unwrap();
                 for voters in &proposition.votes {
-                    writeln!(&mut output, "\t{}", server.get_profil(*voters).map(|p| p.identity.name.as_str()).unwrap_or("[unknown]")).unwrap();
+                    writeln!(
+                        &mut output,
+                        "\t{}",
+                        server
+                            .get_profil(*voters)
+                            .map(|p| p.identity.name.as_str())
+                            .unwrap_or("[unknown]")
+                    )
+                    .unwrap();
                 }
                 CommandOutput::with_text(output)
-            },
+            }
             Commands::AddClassToClass(AddClassToClass { class, target }) => {
                 let class: Vec<_> = server.get_class(class)?.profiles.iter().copied().collect();
                 server.add_many_to_class(class.into_iter(), &target)?;
