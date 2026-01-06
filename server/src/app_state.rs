@@ -1,8 +1,4 @@
-use crate::commands::{
-    AddClass, AddLonelyToClass, AddProfil, AddToClass, ChangeName, ChangePassword,
-    ChangePermission, DeleteClass, DeleteProfil, PermissionKind, RemoveFromClass, ViewNicknameData,
-    ViewPassword, AddClassToClass
-};
+use crate::commands::{AddClass, AddLonelyToClass, AddProfil, AddToClass, ChangeName, ChangePassword, ChangePermission, DeleteClass, DeleteProfil, PermissionKind, RemoveFromClass, ViewNicknameData, ViewPassword, AddClassToClass, ExportClassSummary};
 use crate::data_server::{DataServer, NickNameProposition, ServerError};
 use common::ProfilID;
 use serde::{Deserialize, Serialize};
@@ -39,7 +35,8 @@ pub enum Commands {
     RemoveFromClass(RemoveFromClass),
     ChangePerm(ChangePermission),
     ViewNicknameData(ViewNicknameData),
-    AddClassToClass(AddClassToClass)
+    AddClassToClass(AddClassToClass),
+    ExportClassSummary(ExportClassSummary)
 }
 
 /// used to signal if a something needs to be resent to the client.
@@ -274,6 +271,24 @@ impl AppState {
                 let class: Vec<_> = server.get_class(class)?.profiles.iter().copied().collect();
                 server.add_many_to_class(class.into_iter(), &target)?;
                 CommandOutput::update_classes()
+            },
+            Commands::ExportClassSummary(ExportClassSummary { class }) => {
+                let summary = server.get_class_summary(&class)?;
+                let date = chrono::Local::now().format("%d-%m-%Y");
+                let class = class.replace(|c: char| !c.is_alphanumeric(), "_");
+                let file_name = format!("{class}-{date}.csv");
+
+                println!("{}", summary.len());
+                let file = File::create(&file_name).unwrap();
+                let mut writer = csv::WriterBuilder::new().from_writer(file);
+                for record in summary {
+                    writer.serialize(record).unwrap()
+                }
+                if let Err(e) =writer.flush() {
+                    CommandOutput::with_text(format!("{}", e))
+                } else {
+                    CommandOutput::with_text(format!("exported at : {file_name}"))
+                }
             }
         })
     }

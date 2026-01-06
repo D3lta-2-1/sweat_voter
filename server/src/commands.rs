@@ -116,3 +116,10 @@ pub struct AddClassToClass {
     pub class: String,
     pub target: String,
 }
+
+#[derive(Debug, StructOpt)]
+#[structopt(about = "build a csv with all most voted nicknames")]
+pub struct ExportClassSummary {
+    pub class: String,
+}
+

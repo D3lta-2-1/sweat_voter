@@ -9,6 +9,7 @@ use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 use std::hash::RandomState;
+use crate::data_server::serialization::ProfilSummary;
 
 pub mod mutation_tracker;
 pub mod permissions;
@@ -332,8 +333,6 @@ impl DataServer {
         Ok(())
     }
 
-
-
     pub fn get_class(&mut self, class_name: String) -> Result<&Class, ServerError> {
         let (_, class) = self
             .classes
@@ -441,6 +440,51 @@ impl DataServer {
         let profil = self.id_to_profil.get_mut(&id).ok_or(PersonDoesntExist)?;
         profil.identity.name = new_name;
         Ok(())
+    }
+
+    fn nickname_eval_voters(&self, nickname: &NickNameProposition, class_id: &ClassID) -> usize {
+        let class = self.classes.get(class_id).unwrap();
+        nickname.votes.iter().cloned().filter(|voter| class.profiles.contains(voter)).count()
+    }
+
+    fn build_profil_summary(&self, profil_id: &ProfilID, class_id: &ClassID) -> Option<ProfilSummary> {
+        let profil_name = self.id_to_profil.get(profil_id)?.identity.name.clone();
+        let nicknames = self.nick_name_proposition.get(profil_id)?;
+
+        // pos, votes
+        let most_voted = nicknames.iter()
+            .map(|nickname| self.nickname_eval_voters(nickname, class_id))
+            .enumerate()
+            .reduce(|a, b| if b.1 > a.1 {
+                b } else { a });
+
+        Some(if let Some((pos, votes_in_class)) = most_voted {
+            let most_voted_nickname= &nicknames[pos];
+            ProfilSummary{
+                profil_name,
+                most_voted_nickname: most_voted_nickname.proposition.clone(),
+                votes_in_class,
+                total_votes: most_voted_nickname.votes.len(),
+            }
+        } else {
+            ProfilSummary{
+                profil_name,
+                most_voted_nickname: "[none]".to_string(),
+                votes_in_class: 0,
+                total_votes: 0,
+            }
+        })
+    }
+
+    pub fn get_class_summary(&self, class_name: &str) -> Result<Vec<ProfilSummary>, ServerError> {
+        let (class_id, class) = self
+            .classes
+            .iter()
+            .find(|(_, class)| class.name == class_name)
+            .ok_or(ClassDoesntExist)?;
+        let mut summary: Vec<_> = class.profiles.iter().flat_map(|profil| self.build_profil_summary(profil, class_id)).collect();
+        summary.sort_unstable_by(|a, b| a.profil_name.cmp(&b.profil_name));
+        Ok(summary)
     }
 
     pub fn add_to_class(

@@ -28,3 +28,11 @@ pub struct Class {
     pub name: String,
     pub people: Vec<String>,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct ProfilSummary {
+    pub profil_name: String,
+    pub most_voted_nickname: String,
+    pub votes_in_class: usize,
+    pub total_votes: usize,
+}

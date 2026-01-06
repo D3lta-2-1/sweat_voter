@@ -21,3 +21,4 @@ config.json
 .lycheecache
 classes
 local.properties
+*.csv
